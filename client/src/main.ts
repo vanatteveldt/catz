@@ -3,19 +3,22 @@ import { createGame, fetchState, joinGame, makeMove, rematch } from './api'
 import { cardStyle } from './palette'
 import type { Card, GridSlot, PlayerState, StateResponse } from './types'
 
-function bonusLabel(bonus: number | 'S'): string {
+// Emoji render inconsistently across browsers/platforms; a plain "x" styled
+// red in CSS is the one exception (penalties), rather than relying on ❌.
+function bonusHtml(bonus: number | 'S'): string {
   if (bonus === 'S') return '😻/*'
   if (bonus === 0) return ''
-  return bonus > 0 ? '😺'.repeat(bonus) : '❌'.repeat(-bonus)
+  if (bonus > 0) return '😺'.repeat(bonus)
+  return `<span class="penalty-x">${'x'.repeat(-bonus)}</span>`
 }
 
 // Shared inner markup for a face-up card: a color-banded header (face value
 // top-left, bonus top-right) over a cat photo filling the rest of the card.
 function cardInnerHtml(card: Card): string {
-  const label = bonusLabel(card.bonus)
+  const bonusContent = bonusHtml(card.bonus)
   const photo = catImageFor(card.color, card.id)
   const photoStyle = photo ? ` style="background-image:url('${photo}')"` : ''
-  return `<div class="card-top"><span class="num">${card.number}</span>${label ? `<span class="bonus">${label}</span>` : ''}</div><div class="card-photo"${photoStyle}></div>`
+  return `<div class="card-top"><span class="num">${card.number}</span>${bonusContent ? `<span class="bonus">${bonusContent}</span>` : ''}</div><div class="card-photo"${photoStyle}></div>`
 }
 
 const app = document.getElementById('app')!

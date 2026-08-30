@@ -99,9 +99,16 @@ Everything hinges on **visibility**: a space's visible card is whichever one is 
 - A **lone face-up card** (alone in its space) scores its bonus/penalty and counts for color-group purposes, but **not** face value.
 - A **lone face-down card** scores nothing.
 - In a **2-card stack**, the visible (top) card scores face value **and** bonus/penalty **and** counts for color — the covered card underneath scores nothing, full stop, regardless of what it is.
-- **Color groups:** find the largest group of **orthogonally**-adjacent grid spaces whose visible card shares the same color (wildcards can join any color's group). The single largest such group scores **2 points per card** in it.
+- **Color groups:** find the largest group of **orthogonally**-adjacent grid spaces whose visible card shares the same color (wildcards can join any color's group). The single largest such group scores **N points per card**, where N is the color-group multiplier for the current match round (see below) — 2 in round 1, 3 in round 2, 4 in round 3.
 - **`S` cards:** if a visible card's bonus is `S`, it scores **1 point per visible card of its own color** anywhere on that player's grid (including itself; wildcards count as matching every color, so they count toward every `S` card's total).
 - **Total score** = Σ face value (2-card stacks only) + Σ bonus/penalty (visible cards only) + Σ `S`-card bonuses + color-group bonus.
+
+### Match structure: 3 rounds
+A full match is **3 rounds** of the game above, played back to back on the same invite link/token:
+- Scores **accumulate** across rounds — each round's total is added to a running per-player cumulative score.
+- The color-group multiplier increases each round: **×2** in round 1, **×3** in round 2, **×4** in round 3 (everything else about scoring/rules stays the same each round).
+- Whoever made the **last move** of a round (i.e. the player who acted most recently when the round ended — either the player whose grid filled up, or the player who took the bonus final turn) **starts the next round**.
+- After round 1 or 2 finishes, the score card offers **"Next round"**; after round 3, it offers **"New game"** instead, which starts an entirely fresh 3-round match (cumulative scores reset to 0) on the same token/link.
 
 ### Data model sketch (state JSON)
 ```ts

@@ -174,6 +174,12 @@ button:disabled {
   word-break: break-all;
 }
 
+.penalty-x {
+  color: #e0524f;
+  font-weight: 800;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
 .card-photo {
   flex: 1;
   background-size: cover;
@@ -183,7 +189,7 @@ button:disabled {
 
 .market {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 6px;
   min-height: 3.5rem;
 }
@@ -267,6 +273,14 @@ button:disabled {
   display: block;
   font-size: 0.75rem;
   color: #999;
+}
+
+.score-row.running-total {
+  margin-top: 0.4rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #3a3a42;
+  font-size: 0.85rem;
+  color: #ccc;
 }
 
 @media (min-width: 500px) {
