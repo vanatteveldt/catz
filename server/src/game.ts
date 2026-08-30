@@ -67,6 +67,9 @@ export function createGame(): GameState {
     roundStarter: 0,
     status: 'waiting',
     finalTurnPlayer: null,
+    matchRound: 1,
+    cumulativeScore: [0, 0],
+    lastMover: null,
   }
 }
 
@@ -95,6 +98,8 @@ export function applyMove(state: GameState, playerIdx: PlayerIndex, move: Move):
   const marketIdx = state.market.findIndex((c) => c.id === move.cardId)
   if (marketIdx === -1) return { error: 'card not available' }
   const card = state.market[marketIdx]
+
+  state.lastMover = playerIdx
 
   const grid = state.players[playerIdx].grid
   const ownSlot = grid[card.number - 1]
@@ -157,7 +162,12 @@ export type Score = {
   total: number
 }
 
-function computeScore(playerState: PlayerState): Score {
+// Color-group scoring multiplier: 2 points/card in round 1, 3 in round 2, 4 in round 3.
+function colorMultiplierFor(matchRound: number): number {
+  return matchRound + 1
+}
+
+function computeScore(playerState: PlayerState, colorMultiplier: number): Score {
   // A space's visible card is whichever one is uncovered (top if present,
   // else bottom) and face-up. A face-down or covered card scores nothing at
   // all — not face value, not bonus, not color. A visible card scores face
@@ -222,12 +232,35 @@ function computeScore(playerState: PlayerState): Score {
     faceTotal,
     bonusTotal,
     colorGroupSize: largest,
-    colorGroupBonus: largest * 2,
-    total: faceTotal + bonusTotal + largest * 2,
+    colorGroupBonus: largest * colorMultiplier,
+    total: faceTotal + bonusTotal + largest * colorMultiplier,
   }
 }
 
 export function getScores(state: GameState): [Score, Score] | null {
   if (state.status !== 'finished') return null
-  return [computeScore(state.players[0]), computeScore(state.players[1])]
+  const multiplier = colorMultiplierFor(state.matchRound)
+  return [computeScore(state.players[0], multiplier), computeScore(state.players[1], multiplier)]
+}
+
+// Builds the GameState for the round following a finished one: same token's
+// match continues (scores accumulate, matchRound advances, the player who
+// moved last starts the new round) for rounds 1-2, or a whole new 3-round
+// match begins (cumulative scores reset) once round 3 is done.
+export function nextRoundState(previous: GameState): GameState {
+  const finishedScores = getScores(previous)
+  const cumulative: [number, number] = finishedScores
+    ? [previous.cumulativeScore[0] + finishedScores[0].total, previous.cumulativeScore[1] + finishedScores[1].total]
+    : previous.cumulativeScore
+
+  const matchOver = previous.matchRound >= 3
+  const startingPlayer = previous.lastMover ?? 0
+
+  const state = createGame()
+  state.matchRound = matchOver ? 1 : previous.matchRound + 1
+  state.cumulativeScore = matchOver ? [0, 0] : cumulative
+  state.turn = startingPlayer
+  state.roundStarter = startingPlayer
+  startGame(state)
+  return state
 }

@@ -10,6 +10,8 @@ export type GameState = {
   turn: 0 | 1
   status: GameStatus
   finalTurnPlayer: 0 | 1 | null
+  matchRound: number // 1, 2, or 3
+  cumulativeScore: [number, number] // totals from previously-completed rounds
 }
 
 export type Score = {

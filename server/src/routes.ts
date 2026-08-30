@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { Router } from 'express'
 import { db } from './db.js'
-import { applyMove, createGame, getScores, startGame } from './game.js'
+import { applyMove, createGame, getScores, nextRoundState, startGame } from './game.js'
 import type { GameState, Move, PlayerIndex } from './types.js'
 
 type GameRow = {
@@ -92,8 +92,7 @@ router.post('/games/:token/rematch', (req, res) => {
   const currentState: GameState = JSON.parse(row.state)
   if (currentState.status !== 'finished') return res.status(400).json({ error: 'game is still in progress' })
 
-  const state = createGame()
-  startGame(state)
+  const state = nextRoundState(currentState)
   saveState(row.token, state)
 
   res.json({

@@ -346,7 +346,7 @@ function render(token: string, secret: string, data: StateResponse) {
 
   let statusLine: string
   if (state.status === 'waiting') statusLine = 'Waiting for opponent to join…'
-  else if (state.status === 'finished') statusLine = 'Game finished'
+  else if (state.status === 'finished') statusLine = `Round ${state.matchRound} of 3 finished`
   else if (state.status === 'final-turn' && !isMyTurn) statusLine = "Opponent's bonus turn"
   else statusLine = isMyTurn ? 'Your turn' : "Opponent's turn"
 
@@ -375,14 +375,17 @@ function render(token: string, secret: string, data: StateResponse) {
 
   const inviteLink = `${location.origin}/game/${token}`
 
+  const colorMultiplier = state.matchRound + 1
+  const oppIdx = you === 0 ? 1 : 0
   const scoresHtml = scores
     ? `<div class="scores">
         <div class="score-row ${you === 0 ? 'me' : ''}">You — ${scores[you].total} pts
-          <span class="score-detail">(face ${scores[you].faceTotal}, bonus ${scores[you].bonusTotal >= 0 ? '+' : ''}${scores[you].bonusTotal}, colors ${scores[you].colorGroupSize}×2=${scores[you].colorGroupBonus})</span>
+          <span class="score-detail">(face ${scores[you].faceTotal}, bonus ${scores[you].bonusTotal >= 0 ? '+' : ''}${scores[you].bonusTotal}, colors ${scores[you].colorGroupSize}×${colorMultiplier}=${scores[you].colorGroupBonus})</span>
         </div>
-        <div class="score-row">Opponent — ${scores[you === 0 ? 1 : 0].total} pts
-          <span class="score-detail">(face ${scores[you === 0 ? 1 : 0].faceTotal}, bonus ${scores[you === 0 ? 1 : 0].bonusTotal >= 0 ? '+' : ''}${scores[you === 0 ? 1 : 0].bonusTotal}, colors ${scores[you === 0 ? 1 : 0].colorGroupSize}×2=${scores[you === 0 ? 1 : 0].colorGroupBonus})</span>
+        <div class="score-row">Opponent — ${scores[oppIdx].total} pts
+          <span class="score-detail">(face ${scores[oppIdx].faceTotal}, bonus ${scores[oppIdx].bonusTotal >= 0 ? '+' : ''}${scores[oppIdx].bonusTotal}, colors ${scores[oppIdx].colorGroupSize}×${colorMultiplier}=${scores[oppIdx].colorGroupBonus})</span>
         </div>
+        <div class="score-row running-total">Running total — You ${state.cumulativeScore[you] + scores[you].total}, Opponent ${state.cumulativeScore[oppIdx] + scores[oppIdx].total}</div>
       </div>`
     : ''
 
@@ -396,11 +399,12 @@ function render(token: string, secret: string, data: StateResponse) {
       </div>`
     : ''
 
+  const isLastRound = state.matchRound >= 3
   const middleSectionHtml =
     state.status === 'finished'
-      ? `<h2>Final score</h2>
+      ? `<h2>Round ${state.matchRound} of 3 — final score</h2>
          ${scoresHtml}
-         <button id="new-game-btn" type="button">New game</button>`
+         <button id="new-game-btn" type="button">${isLastRound ? 'New game' : 'Next round'}</button>`
       : `<h2>Market ${marketHint}</h2>
          <div class="market">${marketHtml || '<p class="muted">—</p>'}</div>
          ${stackChoiceHtml}`

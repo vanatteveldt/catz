@@ -34,6 +34,9 @@ export type GameState = {
   roundStarter: PlayerIndex
   status: GameStatus
   finalTurnPlayer: PlayerIndex | null
+  matchRound: number // 1, 2, or 3 — which round of the 3-round match this is
+  cumulativeScore: [number, number] // totals from previously-completed rounds (not including the current one)
+  lastMover: PlayerIndex | null // whoever made the most recent move; starts the next round once this one finishes
 }
 
 export type Move = {
