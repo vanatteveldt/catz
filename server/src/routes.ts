@@ -81,6 +81,29 @@ router.post('/games/:token/join', (req, res) => {
   res.json({ playerSecret })
 })
 
+router.post('/games/:token/rematch', (req, res) => {
+  const row = loadRow(req.params.token)
+  if (!row) return res.status(404).json({ error: 'game not found' })
+  const body = req.body as { secret: string }
+  const playerIdx = playerIndexFor(row, body.secret)
+  if (playerIdx === null) return res.status(403).json({ error: 'invalid player secret' })
+  if (!row.player2_secret) return res.status(400).json({ error: 'waiting for a second player' })
+
+  const currentState: GameState = JSON.parse(row.state)
+  if (currentState.status !== 'finished') return res.status(400).json({ error: 'game is still in progress' })
+
+  const state = createGame()
+  startGame(state)
+  saveState(row.token, state)
+
+  res.json({
+    you: playerIdx,
+    hasOpponent: true,
+    state: sanitize(state),
+    scores: getScores(state),
+  })
+})
+
 router.get('/games/:token/state', (req, res) => {
   const row = loadRow(req.params.token)
   if (!row) return res.status(404).json({ error: 'game not found' })

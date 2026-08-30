@@ -1,5 +1,5 @@
 import { catImageFor } from './catImages'
-import { createGame, fetchState, joinGame, makeMove } from './api'
+import { createGame, fetchState, joinGame, makeMove, rematch } from './api'
 import { cardStyle } from './palette'
 import type { Card, GridSlot, PlayerState, StateResponse } from './types'
 
@@ -396,6 +396,15 @@ function render(token: string, secret: string, data: StateResponse) {
       </div>`
     : ''
 
+  const middleSectionHtml =
+    state.status === 'finished'
+      ? `<h2>Final score</h2>
+         ${scoresHtml}
+         <button id="new-game-btn" type="button">New game</button>`
+      : `<h2>Market ${marketHint}</h2>
+         <div class="market">${marketHtml || '<p class="muted">—</p>'}</div>
+         ${stackChoiceHtml}`
+
   app.innerHTML = `
     <div class="screen play">
       <div class="status">${statusLine}</div>
@@ -404,16 +413,19 @@ function render(token: string, secret: string, data: StateResponse) {
       <h2>You</h2>
       ${gridHtml(me.grid, clickableSpaces, true)}
 
-      <h2>Market ${marketHint}</h2>
-      <div class="market">${marketHtml || '<p class="muted">—</p>'}</div>
-      ${stackChoiceHtml}
+      ${middleSectionHtml}
 
       <h2>Opponent</h2>
       ${gridHtml(opp.grid, new Set(), false)}
-
-      ${scoresHtml}
     </div>
   `
+
+  if (state.status === 'finished') {
+    document.getElementById('new-game-btn')!.addEventListener('click', async () => {
+      const next = await rematch(token, secret)
+      render(token, secret, next)
+    })
+  }
 
   if (isMyTurn) {
     app.querySelectorAll<HTMLButtonElement>('.market-card').forEach((btn) => {

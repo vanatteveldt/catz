@@ -20,6 +20,14 @@ export function fetchState(token: string, secret: string): Promise<StateResponse
   return fetch(`/api/games/${token}/state?as=${encodeURIComponent(secret)}`).then((res) => jsonOrThrow(res))
 }
 
+export function rematch(token: string, secret: string): Promise<StateResponse> {
+  return fetch(`/api/games/${token}/rematch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ secret }),
+  }).then((res) => jsonOrThrow(res))
+}
+
 export function makeMove(
   token: string,
   secret: string,
