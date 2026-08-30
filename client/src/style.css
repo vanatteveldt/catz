@@ -1,0 +1,270 @@
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #1b1b1f;
+  color: #eee;
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 0.75rem 0.75rem 3rem;
+}
+
+h1 {
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+h2 {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #999;
+  margin: 1rem 0 0.4rem;
+}
+
+.screen.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 90vh;
+  gap: 1rem;
+  text-align: center;
+}
+
+button {
+  font-size: 1rem;
+  padding: 0.7rem 1.4rem;
+  border-radius: 0.6rem;
+  border: none;
+  background: #4a7dff;
+  color: white;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.status {
+  text-align: center;
+  font-weight: 600;
+  padding: 0.5rem;
+  background: #26262c;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.invite {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #aaa;
+  margin-bottom: 0.5rem;
+  word-break: break-all;
+}
+
+.invite code {
+  color: #eee;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.slot {
+  aspect-ratio: 1;
+  background: #26262c;
+  border-radius: 0.5rem;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slot.clickable {
+  outline: 2px dashed #4a7dff;
+  cursor: pointer;
+}
+
+.slot.drop-target {
+  outline: 2px dashed rgba(74, 125, 255, 0.5);
+}
+
+.slot.drop-hover {
+  outline: 3px solid #4a7dff;
+  background: rgba(74, 125, 255, 0.18);
+}
+
+.preview-card {
+  opacity: 0.85;
+  outline: 2px dashed rgba(255, 255, 255, 0.7);
+  outline-offset: -2px;
+  pointer-events: none;
+}
+
+.slot-number {
+  position: absolute;
+  top: 2px;
+  left: 5px;
+  font-size: 0.65rem;
+  color: #666;
+}
+
+.stack {
+  display: flex;
+  position: relative;
+  width: 70%;
+  height: 70%;
+}
+
+.stack .card:nth-child(2) {
+  position: absolute;
+  top: 12%;
+  left: 12%;
+}
+
+.card {
+  width: 100%;
+  height: 100%;
+  border-radius: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-weight: 700;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  position: relative;
+  padding: 0;
+}
+
+.card.facedown {
+  background: repeating-linear-gradient(45deg, #444, #444 4px, #3a3a3a 4px, #3a3a3a 8px);
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 2px 5px;
+  flex-shrink: 0;
+  line-height: 1.1;
+}
+
+.card .num {
+  font-size: 0.95rem;
+}
+
+.card .bonus {
+  font-size: 0.68rem;
+  line-height: 1.15;
+  text-align: right;
+  max-width: 62%;
+  word-break: break-all;
+}
+
+.card-photo {
+  flex: 1;
+  background-size: cover;
+  background-position: center;
+  background-color: rgba(0, 0, 0, 0.15);
+}
+
+.market {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  min-height: 3.5rem;
+}
+
+.market-card {
+  width: 70%;
+  aspect-ratio: 1;
+  justify-self: center;
+  align-self: center;
+  padding: 0;
+  touch-action: none;
+  cursor: grab;
+}
+
+.market-card.dragging-source {
+  opacity: 0.35;
+}
+
+.drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  /* width/height set inline per-drag to match the source card's actual size */
+  transform: translate(-50%, -50%) scale(1.1);
+  pointer-events: none;
+  z-index: 1000;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+.market-card.selected {
+  outline: 3px solid #ffd24a;
+}
+
+.stack-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: stretch;
+  background: #26262c;
+  border-radius: 0.5rem;
+  padding: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.stack-choice p {
+  margin: 0 0 0.2rem;
+  text-align: center;
+}
+
+.stack-choice button {
+  background: #33333c;
+}
+
+.muted {
+  color: #666;
+  text-align: center;
+}
+
+.scores {
+  margin-top: 1rem;
+  background: #26262c;
+  border-radius: 0.5rem;
+  padding: 0.7rem;
+}
+
+.score-row {
+  padding: 0.2rem 0;
+}
+
+.score-row.me {
+  font-weight: 700;
+}
+
+.score-detail {
+  display: block;
+  font-size: 0.75rem;
+  color: #999;
+}
+
+@media (min-width: 500px) {
+  #app {
+    padding-top: 1.5rem;
+  }
+}

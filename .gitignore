@@ -1,36 +1,15 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+node_modules/
+dist/
+server/data/*.sqlite
+server/data/*.sqlite-*
+.claude/settings.local.json
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
+# env files
+.env
+.env*.local
 
 # misc
 .DS_Store
+*.log
 *.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# local env files
-.env*.local
-.env
-
-# vercel
-.vercel
-
-# typescript
 *.tsbuildinfo
-next-env.d.ts
