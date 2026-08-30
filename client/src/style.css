@@ -190,12 +190,12 @@ button:disabled {
 .market {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
+  gap: 3px;
   min-height: 3.5rem;
 }
 
 .market-card {
-  width: 70%;
+  width: 92%;
   aspect-ratio: 1;
   justify-self: center;
   align-self: center;
