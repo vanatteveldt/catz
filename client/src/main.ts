@@ -110,7 +110,7 @@ function isSlotFull(slot: GridSlot): boolean {
   return slot.bottom !== null && slot.top !== null
 }
 
-function gridHtml(grid: GridSlot[], clickableSpaces: Set<number>, mine: boolean): string {
+function gridHtml(grid: GridSlot[], clickableSpaces: Set<number>, mine: boolean, backgroundPhoto: string): string {
   const cells = grid
     .map((slot, i) => {
       const space = i + 1
@@ -121,7 +121,9 @@ function gridHtml(grid: GridSlot[], clickableSpaces: Set<number>, mine: boolean)
       </div>`
     })
     .join('')
-  return `<div class="grid ${mine ? 'mine' : ''}">${cells}</div>`
+  return `<div class="grid-wrap" style="--bg-photo:url('${backgroundPhoto}')">
+    <div class="grid ${mine ? 'mine' : ''}">${cells}</div>
+  </div>`
 }
 
 // Where a market card is allowed to land, computed once at drag-start from
@@ -418,12 +420,12 @@ function render(token: string, secret: string, data: StateResponse) {
       ${!hasOpponent ? `<div class="invite">Invite link:<br /><code>${inviteLink}</code></div>` : ''}
 
       <h2>You</h2>
-      ${gridHtml(me.grid, clickableSpaces, true)}
+      ${gridHtml(me.grid, clickableSpaces, true, '/toby/toby1.jpg')}
 
       ${middleSectionHtml}
 
       <h2>Opponent</h2>
-      ${gridHtml(opp.grid, new Set(), false)}
+      ${gridHtml(opp.grid, new Set(), false, '/toby/toby2.jpg')}
     </div>
   `
 

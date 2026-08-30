@@ -77,15 +77,32 @@ button:disabled {
   color: #eee;
 }
 
+.grid-wrap {
+  position: relative;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.grid-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--bg-photo);
+  background-size: cover;
+  background-position: center;
+  opacity: 0.5;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
+  position: relative;
 }
 
 .slot {
   aspect-ratio: 1;
-  background: #26262c;
+  background: rgba(38, 38, 44, 0.72);
   border-radius: 0.5rem;
   position: relative;
   display: flex;
