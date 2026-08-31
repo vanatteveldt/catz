@@ -37,6 +37,8 @@ export type GameState = {
   matchRound: number // 1, 2, or 3 — which round of the 3-round match this is
   cumulativeScore: [number, number] // totals from previously-completed rounds (not including the current one)
   lastMover: PlayerIndex | null // whoever made the most recent move; starts the next round once this one finishes
+  seq: number // increments on every move or undo; lets clients detect changes across polls
+  lastEvent: { type: 'move' | 'undo'; by: PlayerIndex } | null
 }
 
 export type Move = {

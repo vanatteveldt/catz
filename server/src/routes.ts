@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { Router } from 'express'
 import { db } from './db.js'
-import { applyMove, createGame, getScores, nextRoundState, startGame } from './game.js'
+import { applyMove, applyUndo, createGame, getScores, nextRoundState, startGame } from './game.js'
 import type { GameState, Move, PlayerIndex } from './types.js'
 
 type GameRow = {
@@ -9,6 +9,7 @@ type GameRow = {
   player1_secret: string
   player2_secret: string | null
   state: string
+  history: string
   created_at: string
   updated_at: string
 }
@@ -17,9 +18,14 @@ function loadRow(token: string): GameRow | undefined {
   return db.prepare('SELECT * FROM games WHERE token = ?').get(token) as GameRow | undefined
 }
 
-function saveState(token: string, state: GameState) {
-  db.prepare('UPDATE games SET state = ?, updated_at = ? WHERE token = ?').run(
+function loadHistory(row: GameRow): GameState[] {
+  return JSON.parse(row.history)
+}
+
+function saveState(token: string, state: GameState, history: GameState[]) {
+  db.prepare('UPDATE games SET state = ?, history = ?, updated_at = ? WHERE token = ?').run(
     JSON.stringify(state),
+    JSON.stringify(history),
     new Date().toISOString(),
     token
   )
@@ -58,8 +64,8 @@ router.post('/games', (_req, res) => {
   const state = createGame()
   const now = new Date().toISOString()
   db.prepare(
-    'INSERT INTO games (token, player1_secret, player2_secret, state, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(token, player1Secret, null, JSON.stringify(state), now, now)
+    'INSERT INTO games (token, player1_secret, player2_secret, state, history, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run(token, player1Secret, null, JSON.stringify(state), '[]', now, now)
   res.json({ token, playerSecret: player1Secret })
 })
 
@@ -72,9 +78,10 @@ router.post('/games/:token/join', (req, res) => {
   const state: GameState = JSON.parse(row.state)
   startGame(state)
 
-  db.prepare('UPDATE games SET player2_secret = ?, state = ?, updated_at = ? WHERE token = ?').run(
+  db.prepare('UPDATE games SET player2_secret = ?, state = ?, history = ?, updated_at = ? WHERE token = ?').run(
     playerSecret,
     JSON.stringify(state),
+    '[]',
     new Date().toISOString(),
     row.token
   )
@@ -93,13 +100,14 @@ router.post('/games/:token/rematch', (req, res) => {
   if (currentState.status !== 'finished') return res.status(400).json({ error: 'game is still in progress' })
 
   const state = nextRoundState(currentState)
-  saveState(row.token, state)
+  saveState(row.token, state, [])
 
   res.json({
     you: playerIdx,
     hasOpponent: true,
     state: sanitize(state),
     scores: getScores(state),
+    canUndo: false,
   })
 })
 
@@ -116,6 +124,7 @@ router.get('/games/:token/state', (req, res) => {
     hasOpponent: row.player2_secret !== null,
     state: sanitize(state),
     scores: getScores(state),
+    canUndo: loadHistory(row).length > 0,
   })
 })
 
@@ -127,6 +136,9 @@ router.post('/games/:token/move', (req, res) => {
   if (playerIdx === null) return res.status(403).json({ error: 'invalid player secret' })
 
   const state: GameState = JSON.parse(row.state)
+  const history = loadHistory(row)
+  const beforeMove: GameState = JSON.parse(JSON.stringify(state))
+
   const err = applyMove(state, playerIdx, {
     cardId: body.cardId,
     targetSpace: body.targetSpace,
@@ -134,11 +146,37 @@ router.post('/games/:token/move', (req, res) => {
   })
   if (err) return res.status(400).json(err)
 
-  saveState(row.token, state)
+  history.push(beforeMove)
+  saveState(row.token, state, history)
   res.json({
     you: playerIdx,
     hasOpponent: row.player2_secret !== null,
     state: sanitize(state),
     scores: getScores(state),
+    canUndo: true,
+  })
+})
+
+router.post('/games/:token/undo', (req, res) => {
+  const row = loadRow(req.params.token)
+  if (!row) return res.status(404).json({ error: 'game not found' })
+  const body = req.body as { secret: string }
+  const playerIdx = playerIndexFor(row, body.secret)
+  if (playerIdx === null) return res.status(403).json({ error: 'invalid player secret' })
+
+  const history = loadHistory(row)
+  const previous = history.pop()
+  if (!previous) return res.status(400).json({ error: 'nothing to undo' })
+
+  const current: GameState = JSON.parse(row.state)
+  const restored = applyUndo(current, previous, playerIdx)
+
+  saveState(row.token, restored, history)
+  res.json({
+    you: playerIdx,
+    hasOpponent: row.player2_secret !== null,
+    state: sanitize(restored),
+    scores: getScores(restored),
+    canUndo: history.length > 0,
   })
 })

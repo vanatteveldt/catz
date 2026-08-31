@@ -16,7 +16,14 @@ db.exec(`
     player1_secret TEXT NOT NULL,
     player2_secret TEXT,
     state TEXT NOT NULL,
+    history TEXT NOT NULL DEFAULT '[]',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   )
 `)
+
+try {
+  db.exec("ALTER TABLE games ADD COLUMN history TEXT NOT NULL DEFAULT '[]'")
+} catch {
+  // column already exists
+}

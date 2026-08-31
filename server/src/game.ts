@@ -70,6 +70,8 @@ export function createGame(): GameState {
     matchRound: 1,
     cumulativeScore: [0, 0],
     lastMover: null,
+    seq: 0,
+    lastEvent: null,
   }
 }
 
@@ -129,6 +131,8 @@ export function applyMove(state: GameState, playerIdx: PlayerIndex, move: Move):
   const wasFinalTurn = state.status === 'final-turn'
   if (wasFinalTurn) {
     state.status = 'finished'
+    state.seq += 1
+    state.lastEvent = { type: 'move', by: playerIdx }
     return null
   }
 
@@ -140,6 +144,8 @@ export function applyMove(state: GameState, playerIdx: PlayerIndex, move: Move):
     } else {
       state.status = 'finished'
     }
+    state.seq += 1
+    state.lastEvent = { type: 'move', by: playerIdx }
     return null
   }
 
@@ -151,7 +157,16 @@ export function applyMove(state: GameState, playerIdx: PlayerIndex, move: Move):
     state.turn = playerIdx === 0 ? 1 : 0
   }
 
+  state.seq += 1
+  state.lastEvent = { type: 'move', by: playerIdx }
   return null
+}
+
+// Restores a previous snapshot (from the move-history stack), continuing the
+// seq counter from the current state so clients can detect the change across
+// polls regardless of what seq the snapshot itself had at the time.
+export function applyUndo(current: GameState, snapshot: GameState, by: PlayerIndex): GameState {
+  return { ...snapshot, seq: current.seq + 1, lastEvent: { type: 'undo', by } }
 }
 
 export type Score = {

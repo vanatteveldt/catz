@@ -1,5 +1,5 @@
 import { catImageFor } from './catImages'
-import { createGame, fetchState, joinGame, makeMove, rematch } from './api'
+import { createGame, fetchState, joinGame, makeMove, rematch, undoMove } from './api'
 import { cardStyle } from './palette'
 import type { Card, GridSlot, PlayerState, StateResponse } from './types'
 
@@ -38,6 +38,22 @@ let stackChoiceCardId: string | null = null // awaiting an on-top/below choice (
 let isDragging = false // pauses polling's re-render so an in-flight drag isn't ripped out from under the pointer
 let latestData: StateResponse | null = null
 let suppressNextClick = false // a completed drag shouldn't also fire the trailing click
+let lastSeenSeq = -1 // last GameState.seq we've rendered, to detect undos across polls
+let noticeExpiresAt = 0 // Date.now() timestamp until which the undo notice banner stays visible
+
+const SOUND_ENABLED_KEY = 'catz:soundEnabled'
+let soundEnabled = localStorage.getItem(SOUND_ENABLED_KEY) !== 'false'
+
+const opponentMoveSound = new Audio('/audio/meow.mp3')
+opponentMoveSound.volume = 0.4
+
+function playOpponentMoveSound() {
+  if (!soundEnabled) return
+  opponentMoveSound.currentTime = 0
+  void opponentMoveSound.play().catch(() => {
+    // Autoplay may still be blocked in edge cases; a missed sound isn't worth surfacing.
+  })
+}
 
 function boot() {
   const token = getToken()
@@ -265,7 +281,9 @@ function attachMarketCardDrag(
         slotEl.classList.add('drop-hover')
         if (info.stackChoiceSpace === hoveredSpace) {
           const rect = slotEl.getBoundingClientRect()
-          stackBelow = clientY - rect.top > rect.height / 2
+          // Approaching from below (pointer in the lower half) places the new
+          // card on top; approaching from above places it underneath.
+          stackBelow = clientY - rect.top <= rect.height / 2
           showStackPreview(slotEl, card, !stackBelow)
         }
       }
@@ -345,6 +363,25 @@ function render(token: string, secret: string, data: StateResponse) {
   const me: PlayerState = state.players[you]
   const opp: PlayerState = state.players[you === 0 ? 1 : 0]
 
+  if (state.seq !== lastSeenSeq) {
+    if (lastSeenSeq !== -1 && state.lastEvent?.type === 'undo') {
+      noticeExpiresAt = Date.now() + 3000
+      setTimeout(() => {
+        if (latestData) render(token, secret, latestData)
+      }, 3000)
+    }
+    if (lastSeenSeq !== -1 && state.lastEvent?.type === 'move' && state.lastEvent.by !== you) {
+      playOpponentMoveSound()
+    }
+    lastSeenSeq = state.seq
+  }
+  const noticeText =
+    state.lastEvent?.type === 'undo' && Date.now() < noticeExpiresAt
+      ? state.lastEvent.by === you
+        ? 'You undid a move'
+        : "Opponent undid their move"
+      : null
+
   const isMyTurn =
     (state.status === 'active' && state.turn === you) ||
     (state.status === 'final-turn' && state.finalTurnPlayer === you)
@@ -354,6 +391,7 @@ function render(token: string, secret: string, data: StateResponse) {
   else if (state.status === 'finished') statusLine = `Round ${state.matchRound} of 3 finished`
   else if (state.status === 'final-turn' && !isMyTurn) statusLine = "Opponent's bonus turn"
   else statusLine = isMyTurn ? 'Your turn' : "Opponent's turn"
+  if (noticeText) statusLine += ` — ${noticeText}`
 
   const selectedCard = selectedCardId ? state.market.find((c) => c.id === selectedCardId) ?? null : null
   const stackChoiceCard = stackChoiceCardId ? state.market.find((c) => c.id === stackChoiceCardId) ?? null : null
@@ -405,6 +443,7 @@ function render(token: string, secret: string, data: StateResponse) {
     : ''
 
   const isLastRound = state.matchRound >= 3
+  const undoButtonHtml = `<button id="undo-btn" type="button" ${data.canUndo ? '' : 'disabled'}>Undo last move</button>`
   const middleSectionHtml =
     state.status === 'finished'
       ? `<h2>Round ${state.matchRound} of 3 — final score</h2>
@@ -412,11 +451,15 @@ function render(token: string, secret: string, data: StateResponse) {
          <button id="new-game-btn" type="button">${isLastRound ? 'New game' : 'Next round'}</button>`
       : `<h2>Market ${marketHint}</h2>
          <div class="market">${marketHtml || '<p class="muted">—</p>'}</div>
-         ${stackChoiceHtml}`
+         ${stackChoiceHtml}
+         ${undoButtonHtml}`
 
   app.innerHTML = `
     <div class="screen play">
-      <div class="status">${statusLine}</div>
+      <div class="status-bar">
+        <div class="status">${statusLine}</div>
+        <button id="sound-toggle" type="button" class="icon-btn" aria-label="${soundEnabled ? 'Mute sound' : 'Unmute sound'}" title="${soundEnabled ? 'Mute sound' : 'Unmute sound'}">${soundEnabled ? '🔊' : '🔇'}</button>
+      </div>
       ${!hasOpponent ? `<div class="invite">Invite link:<br /><code>${inviteLink}</code></div>` : ''}
 
       <h2>You</h2>
@@ -435,6 +478,18 @@ function render(token: string, secret: string, data: StateResponse) {
       render(token, secret, next)
     })
   }
+
+  document.getElementById('sound-toggle')!.addEventListener('click', () => {
+    soundEnabled = !soundEnabled
+    localStorage.setItem(SOUND_ENABLED_KEY, String(soundEnabled))
+    render(token, secret, data)
+  })
+
+  document.getElementById('undo-btn')?.addEventListener('click', async () => {
+    if (!confirm('Undo the last move? This also affects your opponent.')) return
+    const next = await undoMove(token, secret)
+    render(token, secret, next)
+  })
 
   if (isMyTurn) {
     app.querySelectorAll<HTMLButtonElement>('.market-card').forEach((btn) => {

@@ -56,13 +56,36 @@ button:disabled {
   cursor: default;
 }
 
+.status-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
 .status {
+  flex: 1;
   text-align: center;
   font-weight: 600;
   padding: 0.5rem;
   background: #26262c;
   border-radius: 0.5rem;
-  margin-bottom: 0.5rem;
+}
+
+.icon-btn {
+  padding: 0.5rem 0.6rem;
+  background: #26262c;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+#undo-btn {
+  display: block;
+  width: 100%;
+  margin-top: 0.6rem;
+  background: #3a3a42;
+  font-size: 0.85rem;
+  padding: 0.5rem;
 }
 
 .invite {
@@ -112,15 +135,18 @@ button:disabled {
 
 .slot.clickable {
   outline: 2px dashed #4a7dff;
+  outline-offset: -2px;
   cursor: pointer;
 }
 
 .slot.drop-target {
   outline: 2px dashed rgba(74, 125, 255, 0.5);
+  outline-offset: -2px;
 }
 
 .slot.drop-hover {
   outline: 3px solid #4a7dff;
+  outline-offset: -3px;
   background: rgba(74, 125, 255, 0.18);
 }
 
@@ -180,18 +206,20 @@ button:disabled {
 }
 
 .card .num {
-  font-size: 0.95rem;
+  font-size: 1.1rem;
+  flex-shrink: 0;
 }
 
 .card .bonus {
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   line-height: 1.15;
   text-align: right;
-  max-width: 62%;
+  max-width: 78%;
   word-break: break-all;
 }
 
 .penalty-x {
+  font-size: 1.3em;
   color: #e0524f;
   font-weight: 800;
   font-family: system-ui, -apple-system, sans-serif;
